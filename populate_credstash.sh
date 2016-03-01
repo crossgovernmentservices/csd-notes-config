@@ -14,4 +14,5 @@ sha=$(git rev-parse HEAD)
 cat ./${1}-creds.env | while read line; do
   IFS='=' read -r key value <<< "$line"
   credstash -t ${1}-credentials put $key -v $sha $value
+  credstash -t ${1}-credentials put -v $sha $key $value
 done
