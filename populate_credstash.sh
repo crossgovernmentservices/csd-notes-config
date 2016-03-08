@@ -4,7 +4,7 @@ set -e
 # exit if no env specified
 : ${1?"Usage: $0 ENVIRONMENT"}
 
-env_file="${1}-creds.env"
+env_file="envs/${1}.env"
 
 echo "Decrypting $env_file...
 "
@@ -20,7 +20,7 @@ echo "
 Updating all credentials to version ${sha}
 "
 # get current revision hash
-cat ./${1}-creds.env | while read line; do
+cat $env_file | while read line; do
   IFS='=' read -r key value <<< "$line"
   credstash -t ${1}-credentials put -v $sha $key $value
 done
