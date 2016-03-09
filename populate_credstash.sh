@@ -13,12 +13,12 @@ echo "
 Making sure ${1}-credentials DDB table exists..."
 credstash -t ${1}-credentials setup
 
-sha=$(git rev-parse HEAD)
+# get last-changed revision hash for this env file (not the repo)
+sha=$(git --no-pager log --pretty=format:%H -n 1 -- ${env_file}.gpg)
 
 echo "
 Updating all credentials to version ${sha}
 "
-# get current revision hash
 cat $env_file | while read line; do
   IFS='=' read -r key value <<< "$line"
   credstash -t ${1}-credentials put -v $sha $key $value
