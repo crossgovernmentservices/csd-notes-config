@@ -11,7 +11,7 @@ blackbox_edit_start $env_file
 
 echo "
 Making sure ${1}-credentials DDB table exists..."
-credstash -t ${1}-credentials setup
+credstash -t notes-${1}-credentials setup
 
 # get last-changed revision hash for this env file (not the repo)
 sha=$(git --no-pager log --pretty=format:%H -n 1 -- ${env_file}.gpg)
@@ -21,7 +21,7 @@ Updating all credentials to version ${sha}
 "
 cat $env_file | while read line; do
   IFS='=' read -r key value <<< "$line"
-  credstash -t ${1}-credentials put -v $sha $key $value
+  credstash -t notes-${1}-credentials put -v $sha $key $value
 done
 
 blackbox_shred_all_files
