@@ -25,3 +25,24 @@ cat $env_file | while read line; do
 done
 
 blackbox_shred_all_files
+
+echo "
+Updating credstash with config from terraform
+"
+cd ../csd-notes-infrastructure
+
+# always delete local tfstate files before doing anything else, because
+# terraform blindly pushes any local state to remote storage as a first step
+rm ./*.tfstate*
+rm ./.terraform/*.tfstate*
+
+terraform remote config -backend=s3 -backend-config="bucket=csd-notes-terraform"\
+  -backend-config="key=${ENV}.tfstate" -backend-config="region=eu-west-1"
+
+terraform remote pull
+
+echo "
+Updating DB_HOST
+"
+credstash -t notes-${1}-credentials put \
+    -v $sha DB_HOST $(terraform output rds_main_address)
