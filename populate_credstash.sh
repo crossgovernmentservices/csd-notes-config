@@ -3,15 +3,17 @@
 # exit if no env specified
 : ${1?"Usage: $0 ENVIRONMENT"}
 
-env_file="envs/${1}.env"
+ENV=${1}
+
+env_file="envs/${ENV}.env"
 
 echo "Decrypting $env_file...
 "
 blackbox_edit_start $env_file
 
 echo "
-Making sure ${1}-credentials DDB table exists..."
-credstash -t notes-${1}-credentials setup
+Making sure ${ENV}-credentials DDB table exists..."
+credstash -t notes-${ENV}-credentials setup
 
 # get last-changed revision hash for this env file (not the repo)
 sha=$(git --no-pager log --pretty=format:%H -n 1 -- ${env_file}.gpg)
@@ -21,7 +23,19 @@ Updating all credentials to version ${sha}
 "
 cat $env_file | while read line; do
   IFS='=' read -r key value <<< "$line"
-  credstash -t notes-${1}-credentials put -v $sha $key $value
+
+  # check if value already exists for this key at this version, and only `put`
+  # if it doesn't
+  credstash -t notes-${ENV}-credentials \
+    -r eu-west-1 get -v $sha $key >/dev/null 2>/dev/null
+
+  if [ $? -eq 0 ]
+  then
+    echo "${key} at version ${sha} already exists."
+  else
+    credstash -t notes-${ENV}-credentials -r eu-west-1 \
+      put -k alias/notes-${ENV}-credentials -v $sha $key $value
+  fi
 done
 
 blackbox_shred_all_files
@@ -41,8 +55,23 @@ terraform remote config -backend=s3 -backend-config="bucket=csd-notes-terraform"
 
 terraform remote pull
 
-echo "
-Updating DB_HOST
-"
-credstash -t notes-${1}-credentials put \
-    -v $sha DB_HOST $(terraform output rds_main_address)
+
+func update_credstash_from_terraform () {
+  echo "
+  Updating ${1} to version ${sha}
+  "
+
+  credstash -t notes-${ENV}-credentials \
+    -r eu-west-1 get -v $sha ${1} >/dev/null 2>/dev/null
+
+  if [ $? -eq 0 ]
+  then
+    echo "${1} at version ${sha} already exists."
+  else
+    credstash -t notes-${ENV}-credentials -r eu-west-1 \
+      put -k alias/notes-${ENV}-credentials -v $sha ${1} ${2}
+  fi
+}
+
+
+update_credstash_from_terraform DB_HOST $(terraform output rds_main_address)
