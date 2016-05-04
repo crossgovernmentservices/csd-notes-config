@@ -11,10 +11,6 @@ echo "Decrypting $env_file...
 "
 blackbox_edit_start $env_file
 
-echo "
-Making sure ${ENV}-credentials DDB table exists..."
-credstash -t notes-${ENV}-credentials setup
-
 # get last-changed revision hash for this env file (not the repo)
 sha=$(git --no-pager log --pretty=format:%H -n 1 -- ${env_file}.gpg)
 
