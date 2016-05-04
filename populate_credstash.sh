@@ -56,7 +56,7 @@ terraform remote config -backend=s3 -backend-config="bucket=csd-notes-terraform"
 terraform remote pull
 
 
-func update_credstash_from_terraform () {
+update_credstash_from_terraform () {
   echo "
   Updating ${1} to version ${sha}
   "
